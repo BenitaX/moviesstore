@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Movie, Review
 from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Count
 
 def index(request):
     search_term = request.GET.get('search')
@@ -19,18 +20,31 @@ def index(request):
 def show(request, id):
     movie = Movie.objects.get(id=id)
     reviews = Review.objects.filter(movie=movie)
+    stats = reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+    avg = stats['avg'] or 0
+    rounded = round(avg * 2) / 2
+    full = int(rounded)
+    half = 1 if rounded - full == 0.5 else 0
+    empty = 5 - full - half
+
     template_data = {}
     template_data['title'] = movie.name
     template_data['movie'] = movie
     template_data['reviews'] = reviews
+    template_data['avg_rating'] = avg
+    template_data['rating_count'] = stats['count']
+    template_data['full_stars'] = range(full)
+    template_data['half_stars'] = half
+    template_data['empty_stars'] = range(empty)
     return render(request, 'movies/show.html', {'template_data': template_data})
 
 @login_required
 def create_review(request, id):
-    if request.method == 'POST' and request.POST['comment'] != '':
+    if request.method == 'POST' and request.POST.get('rating') in ['1', '2', '3', '4', '5']:
         movie = Movie.objects.get(id=id)
         review = Review()
-        review.comment = request.POST['comment']
+        review.comment = request.POST.get('comment', ' ')
+        review.rating = int(request.POST['rating'])
         review.movie = movie
         review.user = request.user
         review.save()

@@ -40,7 +40,16 @@
             <h6 class="card-subtitle mb-2 text-muted">
               {{ review.date }}
             </h6>
+
+            <div class="mb-1">
+              {% for i in "12345" %}
+                <span class="star {% if forloop.counter <= review.rating %}filled{% endif %}">★</span>
+              {% endfor %}
+            </div>
+
+            {% if review.comment %}
             <p class="card-text">{{ review.comment }}</p>
+            {% endif %}
             
             {% if user.is_authenticated and user != review.user %}
             <a class="btn btn-danger"
@@ -73,6 +82,16 @@
                   <form method="POST" action="{% url 'movies.create_review' id=template_data.movie.id %}">
                     {% csrf_token %}
                     <p>
+                      <label>Rating:</label><br />
+                      <span class="star-input">
+                        {% for i in "54321" %}
+                          <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" required>
+                          <label for="star{{ i }}" title="{{ i }} stars">★</label>
+                        {% endfor %}
+                      </span>
+                    </p>
+
+                    <p>
                       <label for="comment">Comment:</label>
                       <textarea name="comment" required class="form-control" id="comment"></textarea>
                     </p>
@@ -97,4 +116,21 @@
     </div>
   </div>
 </div>
+
+<style>
+  .star { font-size: 1.4rem; color: #ccc; }
+  .star.filled { color: #f5b301; }
+  .star.half {
+    background: linear-gradient(90deg, #f5b301 50%, #ccc 50%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .star-input { display: inline-flex; flex-direction: row-reverse; }
+  .star-input input { display: none; }
+  .star-input label { font-size: 2rem; color: #ccc; cursor: pointer; padding: 0 2px; }
+  .star-input input:checked ~ label,
+  .star-input label:hover,
+  .star-input label:hover ~ label { color: #f5b301; }
+</style>
 {% endblock content %}
