@@ -1,0 +1,15 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<div class="module">
+    <h2>TOP CUSTOMER</h2>
+    <p>
+        <a href = "{% url 'cart.topcustomer' %}">
+            <b>View </b>
+        </a>
+    </p>
+</div>
+
+{{block.super}}
+
+{% endblock %}

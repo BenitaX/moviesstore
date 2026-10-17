@@ -2,8 +2,13 @@ from django.shortcuts import render
 from django.shortcuts import get_object_or_404, redirect
 from movies.models import Movie
 from .utils import calculate_cart_total
-from .models import Order, Item
-from django.contrib.auth.decorators import login_required
+from .models import Order, Item, User
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Sum
+from django.contrib import admin
+
+admin_required = user_passes_test(lambda u: 
+                                  u.is_authenticated and u.is_superuser)
 
 def index(request):
     cart_total = 0
@@ -59,4 +64,34 @@ def purchase(request):
     template_data = {}
     template_data['title'] = 'Purchase confirmation'
     template_data['order_id'] = order.id
-    return render(request, 'cart/purchase.html', {'template_data': template_data})
+    return render(request, 'cart/purchase.html', 
+                  {'template_data': template_data})
+
+@admin_required
+def topcustomer(request):
+    customer = (User.objects
+                    .annotate(total_items=Sum("order__item__quantity"))
+                    .order_by("-total_items")
+                    .first()
+                )
+
+    template_data = {}
+    template_data['customer_name'] = customer.username
+    template_data['item_count'] = customer.total_items
+    template_data['user'] = customer
+
+    context = {
+        **admin.site.each_context(request), 
+        'template_data': template_data,
+    }
+
+    return render(request, 'cart/admin_topcustomer.html',
+                  context)
+
+# from django.contrib.auth import get_user_model
+
+# User = get_user_model()  # works with custom user models too
+
+# # All field objects
+# for field in User._meta.get_fields():
+#     print(field.name, type(field).__name__)
